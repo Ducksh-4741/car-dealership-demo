@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier Auto Dealership | Luxury & Pre-Owned Vehicles</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+/* 3D Car Viewer Section */
+.car3d-section {
+    padding: 60px 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.car3d-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+    margin-top: 40px;
+}
+
+.car3d-viewer {
+    position: relative;
+    background-color: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    height: 500px;
+}
+
+#car3dCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+}
+
+.spinner {
+    border: 5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 5px solid #1a3a5f;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.car3d-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.car-selection h3,
+.color-selection h3,
+.view-controls h3,
+.car3d-info h3 {
+    margin-bottom: 15px;
+    color: #1a3a5f;
+    font-size: 18px;
+}
+
+.car-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.car-option {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.car-option.active {
+    border-color: #1a3a5f;
+    background-color: #f0f5ff;
+}
+
+.car-option:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.car-option img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 8px;
+}
+
+.car-option span {
+    display: block;
+    font-weight: 600;
+    color: #333;
+}
+
+.color-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid white;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.color-option.active {
+    border-color: #1a3a5f;
+    transform: scale(1.1);
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.view-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.view-btn {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.view-btn:hover {
+    background-color: #1a3a5f;
+    color: white;
+    border-color: #1a3a5f;
+}
+
+.car3d-info {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.car3d-info h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.specs-list {
+    margin-top: 20px;
+}
+
+.spec-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.spec-item i {
+    color: #1a3a5f;
+    width: 20px;
+}
+
+/* Instructions */
+.viewer-instructions {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 0 0 10px 10px;
+}
+
+/* Responsive design for 3D viewer */
+@media (max-width: 992px) {
+    .car3d-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .car3d-viewer {
+        height: 400px;
+    }
+}
+
+@media (max-width: 576px) {
+    .car3d-viewer {
+        height: 300px;
+    }
+    
+    .car-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .view-buttons {
+        grid-template-columns: 1fr;
+    }
+}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            color: #1a3a5f;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: #1a3a5f;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .logo i {
+            color: #ffc107;
+            margin-right: 10px;
+        }
+
+        .logo span {
+            color: #ffc107;
+        }
+
+        .contact-info {
+            display: flex;
+            gap: 25px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .contact-item i {
+            color: #ffc107;
+        }
+
+        nav {
+            background-color: #152942;
+            padding: 12px 0;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-links li {
+            margin-right: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            font-size: 16px;
+        }
+
+        .nav-links a:hover {
+            color: #ffc107;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .hero p {
+            font-size: 20px;
+            max-width: 700px;
+            margin: 0 auto 30px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #ffc107;
+            color: #1a3a5f;
+            padding: 15px 35px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cta-button:hover {
+            background-color: #ffb300;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Search Section */
+        .search-section {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-section h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1a3a5f;
+        }
+
+        .form-group select, .form-group input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: #1a3a5f;
+        }
+
+        /* Featured Vehicles */
+        .section-title {
+            text-align: center;
+            margin: 60px 0 40px;
+            position: relative;
+        }
+
+        .section-title:after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 4px;
+            background-color: #ffc107;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .vehicles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .vehicle-card {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .vehicle-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .vehicle-image {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .vehicle-details {
+            padding: 20px;
+        }
+
+        .vehicle-details h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .vehicle-specs {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .vehicle-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a3a5f;
+            margin-bottom: 15px;
+        }
+
+        .vehicle-price span {
+            font-size: 14px;
+            font-weight: normal;
+            color: #666;
+        }
+
+        .vehicle-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-details, .btn-inquire {
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn-details {
+            background-color: #f0f0f0;
+            color: #1a3a5f;
+        }
+
+        .btn-details:hover {
+            background-color: #e0e0e0;
+        }
+
+        .btn-inquire {
+            background-color: #1a3a5f;
+            color: white;
+        }
+
+        .btn-inquire:hover {
+            background-color: #152942;
+        }
+
+        /* Services */
+        .services {
+            background-color: #f0f5ff;
+            padding: 60px 0;
+            margin-top: 40px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .service-card {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .service-icon {
+            font-size: 40px;
+            color: #1a3a5f;
+            margin-bottom: 20px;
+        }
+
+        .service-card h3 {
+            margin-bottom: 15px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #1a3a5f;
+            color: white;
+            padding: 60px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-column h3 {
+            color: #ffc107;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .footer-column p, .footer-column a {
+            color: #d0d7e2;
+            margin-bottom: 10px;
+            display: block;
+            text-decoration: none;
+        }
+
+        .footer-column a:hover {
+            color: #ffc107;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-icons a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .social-icons a:hover {
+            background-color: #ffc107;
+            color: #1a3a5f;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 10px;
+            padding: 30px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #1a3a5f;
+        }
+
+        .modal-vehicle-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .contact-info {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .search-section {
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background-color: #152942;
+                padding: 20px;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links li {
+                margin: 10px 0;
+            }
+
+            .hero {
+                padding: 80px 0;
+            }
+
+            .hero h1 {
+                font-size: 30px;
+            }
+
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+
+            .vehicles-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+        }
+    </style>
+<!-- Add this after the hero section -->
+<section class="car3d-section" id="car3d">
+    <div class="container">
+        <h2 class="section-title">Interactive 3D Car Viewer</h2>
+        <div class="car3d-container">
+            <div class="car3d-viewer" id="car3dViewer">
+                <!-- 3D canvas will be inserted here -->
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <p>Loading 3D Model...</p>
+                </div>
+            </div>
+            
+            <div class="car3d-controls">
+                <div class="car-selection">
+                    <h3>Select Car Model</h3>
+                    <div class="car-options">
+                        <button class="car-option active" data-model="sports">
+                            <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Sports Car">
+                            <span>Sports Car</span>
+                        </button>
+                        <button class="car-option" data-model="suv">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSejjEUgqQjccLgtoiItF0cz8zFN30U6kR7gw&s" alt="SUV">
+                            <span>SUV</span>
+                        </button>
+                        <button class="car-option" data-model="sedan">
+                            <img src="https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Sedan">
+                            <span>Sedan</span>
+                        </button>
+                        <button class="car-option" data-model="truck">
+                            <img src="https://images.unsplash.com/photo-1580274455191-1c62238fa333?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Truck">
+                            <span>Truck</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="color-selection">
+                    <h3>Change Color</h3>
+                    <div class="color-options">
+                        <button class="color-option active" style="background-color: #1a3a5f;" data-color="#1a3a5f"></button>
+                        <button class="color-option" style="background-color: #c62828;" data-color="#c62828"></button>
+                        <button class="color-option" style="background-color: #2e7d32;" data-color="#2e7d32"></button>
+                        <button class="color-option" style="background-color: #f9f9f9; border: 1px solid #ddd;" data-color="#f9f9f9"></button>
+                        <button class="color-option" style="background-color: #000000;" data-color="#000000"></button>
+                        <button class="color-option" style="background-color: #ff9800;" data-color="#ff9800"></button>
+                    </div>
+                </div>
+                
+                <div class="view-controls">
+                    <h3>View Options</h3>
+                    <div class="view-buttons">
+                        <button class="view-btn" data-view="exterior">
+                            <i class="fas fa-car"></i> Exterior
+                        </button>
+                        <button class="view-btn" data-view="interior">
+                            <i class="fas fa-chair"></i> Interior
+                        </button>
+                        <button class="view-btn" data-view="top">
+                            <i class="fas fa-eye"></i> Top View
+                        </button>
+                        <button class="view-btn" data-view="reset">
+                            <i class="fas fa-undo"></i> Reset View
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="car3d-info">
+                    <h3 id="car3dTitle">Sports Car Model</h3>
+                    <p id="car3dDescription">Experience this vehicle in full 3D. Rotate with mouse drag, zoom with scroll wheel.</p>
+                    <div class="specs-list">
+                        <div class="spec-item">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Top Speed: <strong>180 mph</strong></span>
+                        </div>
+                        <div class="spec-item">
+                            <i class="fas fa-bolt"></i>
+                            <span>Engine: <strong>V8 Turbo</strong></span>
+                        </div>
+                        <div class="spec-item">
+                            <i class="fas fa-cogs"></i>
+                            <span>Transmission: <strong>8-Speed Auto</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <header>
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <i class="fas fa-car"></i>
+                    <span>Premier</span>Auto
+                </div>
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <span>(555) 123-4567</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Mon-Fri: 9am-7pm</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>123 Auto Way</span>
+                    </div>
+                </div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <nav>
+            <div class="container">
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="#"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="#inventory"><i class="fas fa-car"></i> Inventory</a></li>
+                    <li><a href="#services"><i class="fas fa-tools"></i> Services</a></li>
+                    <li><a href="#financing"><i class="fas fa-calculator"></i> Financing</a></li>
+                    <li><a href="#about"><i class="fas fa-info-circle"></i> About Us</a></li>
+                    <li><a href="#contact"><i class="fas fa-envelope"></i> Contact</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Find Your Perfect Vehicle Today</h1>
+            <p>With over 500 new and pre-owned vehicles in stock, we have the right car, truck, or SUV for you. Quality vehicles at competitive prices.</p>
+            <a href="#inventory" class="cta-button">Browse Inventory</a>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="container">
+        <div class="search-section">
+            <h2>Find Your Dream Car</h2>
+            <form class="search-form" id="searchForm">
+                <div class="form-group">
+                    <label for="make">Make</label>
+                    <select id="make">
+                        <option value="">Any Make</option>
+                        <option value="audi">Audi</option>
+                        <option value="bmw">BMW</option>
+                        <option value="ford">Ford</option>
+                        <option value="honda">Honda</option>
+                        <option value="mercedes">Mercedes-Benz</option>
+                        <option value="toyota">Toyota</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="model">Model</label>
+                    <select id="model">
+                        <option value="">Any Model</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="price">Max Price</label>
+                    <select id="price">
+                        <option value="">Any Price</option>
+                        <option value="20000">$20,000</option>
+                        <option value="30000">$30,000</option>
+                        <option value="40000">$40,000</option>
+                        <option value="50000">$50,000</option>
+                        <option value="75000">$75,000</option>
+                        <option value="100000">$100,000+</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="type">Vehicle Type</label>
+                    <select id="type">
+                        <option value="">Any Type</option>
+                        <option value="sedan">Sedan</option>
+                        <option value="suv">SUV</option>
+                        <option value="truck">Truck</option>
+                        <option value="coupe">Coupe</option>
+                        <option value="convertible">Convertible</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="cta-button">Search Vehicles</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Featured Vehicles -->
+    <section class="container" id="inventory">
+        <h2 class="section-title">Featured Vehicles</h2>
+        <div class="vehicles-grid" id="vehiclesGrid">
+            <!-- Vehicle cards will be populated by JavaScript -->
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="container">
+            <h2 class="section-title">Our Services</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-car-battery"></i>
+                    </div>
+                    <h3>Vehicle Maintenance</h3>
+                    <p>Keep your vehicle running smoothly with our comprehensive maintenance services performed by certified technicians.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <h3>Financing</h3>
+                    <p>Flexible financing options tailored to your budget. We work with multiple lenders to get you the best rates.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Extended Warranties</h3>
+                    <p>Protect your investment with our comprehensive extended warranty plans for both new and pre-owned vehicles.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-truck-pickup"></i>
+                    </div>
+                    <h3>Trade-In Appraisal</h3>
+                    <p>Get a fair market value estimate for your current vehicle with our hassle-free trade-in appraisal process.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>Premier Auto</h3>
+                    <p>Your trusted partner for new and pre-owned vehicles. We're committed to providing exceptional service and quality vehicles.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <a href="#inventory">Browse Inventory</a>
+                    <a href="#services">Our Services</a>
+                    <a href="#financing">Financing Options</a>
+                    <a href="#about">About Us</a>
+                    <a href="#contact">Contact Us</a>
+                </div>
+                <div class="footer-column">
+                    <h3>Contact Info</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> 123 Auto Way, Detroit, MI 48201</p>
+                    <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> info@premierauto.com</p>
+                    <p><i class="fas fa-clock"></i> Mon-Fri: 9am-7pm, Sat: 9am-6pm, Sun: 11am-5pm</p>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2023 Premier Auto Dealership. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Vehicle Details Modal -->
+    <div class="modal" id="vehicleModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <img id="modalVehicleImage" class="modal-vehicle-image" src="" alt="Vehicle">
+            <h2 id="modalVehicleTitle"></h2>
+            <div class="vehicle-specs" id="modalVehicleSpecs"></div>
+            <p id="modalVehicleDescription"></p>
+            <div class="vehicle-price" id="modalVehiclePrice"></div>
+            <div style="margin-top: 20px;">
+                <button class="btn-inquire" id="modalInquireBtn">Inquire About This Vehicle</button>
+                <button class="btn-details" id="modalScheduleTestDriveBtn">Schedule Test Drive</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+        
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+            });
+        });
+        
+        // Vehicle data
+        const vehicles = [
+            {
+                id: 1,
+                make: "Audi",
+                model: "Q7",
+                year: 2022,
+                price: 58900,
+                type: "suv",
+                image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                mileage: "12,500",
+                transmission: "Automatic",
+                fuel: "Gasoline",
+                description: "Luxury SUV with premium features including leather seats, panoramic sunroof, and advanced safety systems."
+            },
+            {
+                id: 2,
+                make: "BMW",
+                model: "M4 Competition",
+                year: 2023,
+                price: 82900,
+                type: "coupe",
+                image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                mileage: "3,200",
+                transmission: "Automatic",
+                fuel: "Gasoline",
+                description: "High-performance coupe with a powerful engine, sport-tuned suspension, and track-ready features."
+            },
+            {
+                id: 3,
+                make: "Ford",
+                model: "F-150 Raptor",
+                year: 2022,
+                price: 75900,
+                type: "truck",
+                image: "https://images.unsplash.com/photo-1580274455191-1c62238fa333?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                mileage: "18,750",
+                transmission: "Automatic",
+                fuel: "Gasoline",
+                description: "Off-road capable truck with exceptional towing capacity, advanced technology, and rugged durability."
+            },
+            {
+                id: 4,
+                make: "Mercedes-Benz",
+                model: "E-Class",
+                year: 2021,
+                price: 46900,
+                type: "sedan",
+                image: "https://stimg.cardekho.com/images/carexteriorimages/930x620/Mercedes-Benz/E-Class/8407/1677305821069/front-left-side-47.jpg",
+                mileage: "22,100",
+                transmission: "Automatic",
+                fuel: "Hybrid",
+                description: "Luxury sedan with elegant design, cutting-edge technology, and a comfortable, refined ride."
+            },
+            {
+                id: 5,
+                make: "Toyota",
+                model: "RAV4 Hybrid",
+                year: 2023,
+                price: 32900,
+                type: "suv",
+                image: "https://i.cdn.newsbytesapp.com/images/l79820221020142410.jpeg",
+                mileage: "8,500",
+                transmission: "Automatic",
+                fuel: "Hybrid",
+                description: "Fuel-efficient SUV with spacious interior, advanced safety features, and all-wheel drive capability."
+            },
+            {
+                id: 6,
+                make: "Honda",
+                model: "Accord",
+                year: 2022,
+                price: 27900,
+                type: "sedan",
+                image: "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                mileage: "15,300",
+                transmission: "Automatic",
+                fuel: "Gasoline",
+                description: "Reliable midsize sedan with excellent fuel economy, comfortable interior, and Honda's renowned reliability."
+            }
+        ];
+        
+        // Populate vehicle cards
+        const vehiclesGrid = document.getElementById('vehiclesGrid');
+        
+        function renderVehicles(vehicleList) {
+            vehiclesGrid.innerHTML = '';
+            
+            vehicleList.forEach(vehicle => {
+                const vehicleCard = document.createElement('div');
+                vehicleCard.className = 'vehicle-card';
+                vehicleCard.innerHTML = `
+                    <img src="${vehicle.image}" alt="${vehicle.make} ${vehicle.model}" class="vehicle-image">
+                    <div class="vehicle-details">
+                        <h3>${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
+                        <div class="vehicle-specs">
+                            <span><i class="fas fa-tachometer-alt"></i> ${vehicle.mileage} mi</span>
+                            <span><i class="fas fa-cog"></i> ${vehicle.transmission}</span>
+                            <span><i class="fas fa-gas-pump"></i> ${vehicle.fuel}</span>
+                        </div>
+                        <div class="vehicle-price">$${vehicle.price.toLocaleString()}</div>
+                        <div class="vehicle-actions">
+                            <button class="btn-details" data-id="${vehicle.id}">View Details</button>
+                            <button class="btn-inquire" data-id="${vehicle.id}">Inquire</button>
+                        </div>
+                    </div>
+                `;
+                vehiclesGrid.appendChild(vehicleCard);
+            });
+            
+            // Add event listeners to the buttons
+            document.querySelectorAll('.btn-details').forEach(button => {
+                button.addEventListener('click', function() {
+                    const vehicleId = parseInt(this.getAttribute('data-id'));
+                    showVehicleDetails(vehicleId);
+                });
+            });
+            
+            document.querySelectorAll('.btn-inquire').forEach(button => {
+                button.addEventListener('click', function() {
+                    const vehicleId = parseInt(this.getAttribute('data-id'));
+                    inquireAboutVehicle(vehicleId);
+                });
+            });
+        }
+        
+        // Initial render
+        renderVehicles(vehicles);
+        
+        // Search form functionality
+        const searchForm = document.getElementById('searchForm');
+        const makeSelect = document.getElementById('make');
+        const modelSelect = document.getElementById('model');
+        const priceSelect = document.getElementById('price');
+        const typeSelect = document.getElementById('type');
+        
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const make = makeSelect.value;
+            const maxPrice = priceSelect.value;
+            const type = typeSelect.value;
+            
+            let filteredVehicles = vehicles;
+            
+            if (make) {
+                filteredVehicles = filteredVehicles.filter(vehicle => 
+                    vehicle.make.toLowerCase() === make.toLowerCase()
+                );
+            }
+            
+            if (maxPrice) {
+                filteredVehicles = filteredVehicles.filter(vehicle => 
+                    vehicle.price <= parseInt(maxPrice)
+                );
+            }
+            
+            if (type) {
+                filteredVehicles = filteredVehicles.filter(vehicle => 
+                    vehicle.type === type
+                );
+            }
+            
+            renderVehicles(filteredVehicles);
+            
+            // Update section title
+            const sectionTitle = document.querySelector('.section-title');
+            if (filteredVehicles.length === 0) {
+                sectionTitle.textContent = "No Vehicles Found";
+            } else if (filteredVehicles.length === vehicles.length) {
+                sectionTitle.textContent = "Featured Vehicles";
+            } else {
+                sectionTitle.textContent = `Found ${filteredVehicles.length} Vehicle${filteredVehicles.length !== 1 ? 's' : ''}`;
+            }
+        });
+        
+        // Reset search when make is changed
+        makeSelect.addEventListener('change', function() {
+            modelSelect.innerHTML = '<option value="">Any Model</option>';
+            
+            if (this.value) {
+                const makeModels = vehicles
+                    .filter(v => v.make.toLowerCase() === this.value.toLowerCase())
+                    .map(v => v.model);
+                
+                const uniqueModels = [...new Set(makeModels)];
+                
+                uniqueModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.toLowerCase();
+                    option.textContent = model;
+                    modelSelect.appendChild(option);
+                });
+            }
+        });
+        
+        // Modal functionality
+        const modal = document.getElementById('vehicleModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalVehicleImage = document.getElementById('modalVehicleImage');
+        const modalVehicleTitle = document.getElementById('modalVehicleTitle');
+        const modalVehicleSpecs = document.getElementById('modalVehicleSpecs');
+        const modalVehicleDescription = document.getElementById('modalVehicleDescription');
+        const modalVehiclePrice = document.getElementById('modalVehiclePrice');
+        const modalInquireBtn = document.getElementById('modalInquireBtn');
+        const modalScheduleTestDriveBtn = document.getElementById('modalScheduleTestDriveBtn');
+        
+        let currentVehicleId = null;
+        
+        function showVehicleDetails(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (!vehicle) return;
+            
+            currentVehicleId = vehicleId;
+            modalVehicleImage.src = vehicle.image;
+            modalVehicleImage.alt = `${vehicle.make} ${vehicle.model}`;
+            modalVehicleTitle.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+            modalVehicleSpecs.innerHTML = `
+                <span><i class="fas fa-tachometer-alt"></i> ${vehicle.mileage} mi</span>
+                <span><i class="fas fa-cog"></i> ${vehicle.transmission}</span>
+                <span><i class="fas fa-gas-pump"></i> ${vehicle.fuel}</span>
+            `;
+            modalVehicleDescription.textContent = vehicle.description;
+            modalVehiclePrice.innerHTML = `$${vehicle.price.toLocaleString()} <span>+ taxes & fees</span>`;
+            
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function inquireAboutVehicle(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (!vehicle) return;
+            
+            alert(`Thank you for your interest in the ${vehicle.year} ${vehicle.make} ${vehicle.model}!\n\nOur sales team will contact you shortly with more information.`);
+        }
+        
+        function scheduleTestDrive(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (!vehicle) return;
+            
+            alert(`Test drive scheduled for the ${vehicle.year} ${vehicle.make} ${vehicle.model}!\n\nWe'll contact you to confirm the date and time.`);
+        }
+        
+        closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+        
+        modalInquireBtn.addEventListener('click', () => {
+            if (currentVehicleId) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                inquireAboutVehicle(currentVehicleId);
+            }
+        });
+        
+        modalScheduleTestDriveBtn.addEventListener('click', () => {
+            if (currentVehicleId) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                scheduleTestDrive(currentVehicleId);
+            }
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+// ==================== 3D Car Viewer ====================
+class Car3DViewer {
+    constructor() {
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.controls = null;
+        this.carModel = null;
+        this.currentModel = 'sports';
+        this.currentColor = '#1a3a5f';
+        
+        this.modelUrls = {
+            sports: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r134/examples/models/gltf/Lambo.glb',
+            suv: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r134/examples/models/gltf/SUV.glb',
+            sedan: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/BoxAnimated/glTF/BoxAnimated.gltf',
+            truck: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r134/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf'
+        };
+        
+        this.carInfo = {
+            sports: {
+                title: 'Sports Car Model',
+                description: 'High-performance sports car with aerodynamic design and powerful engine.',
+                specs: {
+                    speed: '180 mph',
+                    engine: 'V8 Turbo',
+                    transmission: '8-Speed Auto'
+                }
+            },
+            suv: {
+                title: 'Luxury SUV',
+                description: 'Spacious SUV with premium interior and advanced safety features.',
+                specs: {
+                    speed: '130 mph',
+                    engine: 'V6 Hybrid',
+                    transmission: 'CVT'
+                }
+            },
+            sedan: {
+                title: 'Executive Sedan',
+                description: 'Elegant sedan with luxurious interior and smooth ride quality.',
+                specs: {
+                    speed: '155 mph',
+                    engine: 'Inline-6',
+                    transmission: '10-Speed Auto'
+                }
+            },
+            truck: {
+                title: 'Premium Truck',
+                description: 'Powerful truck with exceptional towing capacity and rugged design.',
+                specs: {
+                    speed: '110 mph',
+                    engine: 'V8 Diesel',
+                    transmission: '6-Speed Auto'
+                }
+            }
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        // Create scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0xf8f9fa);
+        
+        // Create camera
+        this.camera = new THREE.PerspectiveCamera(
+            45,
+            document.getElementById('car3dViewer').clientWidth / 
+            document.getElementById('car3dViewer').clientHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.set(5, 3, 5);
+        
+        // Create renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(
+            document.getElementById('car3dViewer').clientWidth,
+            document.getElementById('car3dViewer').clientHeight
+        );
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        // Add renderer to DOM
+        document.getElementById('car3dViewer').appendChild(this.renderer.domElement);
+        
+        // Add orbit controls
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+        this.controls.minDistance = 2;
+        this.controls.maxDistance = 10;
+        
+        // Add lighting
+        this.addLights();
+        
+        // Add grid helper
+        const gridHelper = new THREE.GridHelper(10, 10);
+        gridHelper.material.opacity = 0.2;
+        gridHelper.material.transparent = true;
+        this.scene.add(gridHelper);
+        
+        // Load initial model
+        this.loadModel(this.currentModel);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => this.onWindowResize());
+        
+        // Start animation loop
+        this.animate();
+        
+        // Setup event listeners for UI controls
+        this.setupEventListeners();
+    }
+    
+    addLights() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+        
+        // Directional light (sun)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        this.scene.add(directionalLight);
+        
+        // Hemisphere light for more natural lighting
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.3);
+        hemisphereLight.position.set(0, 20, 0);
+        this.scene.add(hemisphereLight);
+    }
+    
+    loadModel(modelType) {
+        // Remove existing model
+        if (this.carModel) {
+            this.scene.remove(this.carModel);
+        }
+        
+        // Show loading spinner
+        document.getElementById('loadingSpinner').style.display = 'block';
+        
+        // Create a simple placeholder model while loading
+        this.createPlaceholderModel();
+        
+        // Try to load the actual model
+        const loader = new THREE.GLTFLoader();
+        
+        // Note: Using placeholder models since real car models require specific URLs
+        // In production, you would use actual car model URLs
+        setTimeout(() => {
+            // Create a more detailed placeholder
+            this.createDetailedPlaceholder(modelType);
+            document.getElementById('loadingSpinner').style.display = 'none';
+            
+            // Update car info
+            this.updateCarInfo(modelType);
+        }, 1000);
+    }
+    
+    createPlaceholderModel() {
+        // Create a simple car-shaped placeholder
+        const carGroup = new THREE.Group();
+        
+        // Car body
+        const bodyGeometry = new THREE.BoxGeometry(2, 0.5, 4);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: new THREE.Color(this.currentColor),
+            metalness: 0.7,
+            roughness: 0.2
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.castShadow = true;
+        body.receiveShadow = true;
+        carGroup.add(body);
+        
+        // Car top
+        const topGeometry = new THREE.BoxGeometry(1.8, 0.5, 2);
+        const top = new THREE.Mesh(topGeometry, bodyMaterial);
+        top.position.y = 0.5;
+        top.position.z = -0.5;
+        top.castShadow = true;
+        carGroup.add(top);
+        
+        // Wheels
+        const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+        const wheelMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x222222,
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        
+        for (let i = 0; i < 4; i++) {
+            const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel.rotation.z = Math.PI / 2;
+            
+            const xPos = i < 2 ? -0.8 : 0.8;
+            const zPos = i % 2 === 0 ? -1.2 : 1.2;
+            
+            wheel.position.set(xPos, -0.3, zPos);
+            wheel.castShadow = true;
+            carGroup.add(wheel);
+        }
+        
+        carGroup.position.y = 0.5;
+        this.scene.add(carGroup);
+        this.carModel = carGroup;
+    }
+    
+    createDetailedPlaceholder(modelType) {
+        // Remove existing placeholder
+        if (this.carModel) {
+            this.scene.remove(this.carModel);
+        }
+        
+        const carGroup = new THREE.Group();
+        const color = new THREE.Color(this.currentColor);
+        
+        // Different shapes for different car types
+        if (modelType === 'sports') {
+            // Sports car - low and sleek
+            const bodyGeometry = new THREE.BoxGeometry(1.8, 0.4, 4);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: color,
+                metalness: 0.8,
+                roughness: 0.1
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            carGroup.add(body);
+            
+            // Spoiler
+            const spoilerGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.3);
+            const spoiler = new THREE.Mesh(spoilerGeometry, bodyMaterial);
+            spoiler.position.y = 0.5;
+            spoiler.position.z = -1.8;
+            carGroup.add(spoiler);
+            
+        } else if (modelType === 'suv') {
+            // SUV - taller and boxier
+            const bodyGeometry = new THREE.BoxGeometry(2, 0.8, 4);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: color,
+                metalness: 0.5,
+                roughness: 0.3
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            carGroup.add(body);
+            
+            // Roof rack
+            const rackGeometry = new THREE.BoxGeometry(2.2, 0.05, 2);
+            const rackMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const rack = new THREE.Mesh(rackGeometry, rackMaterial);
+            rack.position.y = 0.9;
+            rack.position.z = 0.5;
+            carGroup.add(rack);
+            
+        } else if (modelType === 'truck') {
+            // Truck - with separate bed
+            const cabGeometry = new THREE.BoxGeometry(1.8, 0.8, 2.5);
+            const bedGeometry = new THREE.BoxGeometry(1.8, 0.5, 2);
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                color: color,
+                metalness: 0.4,
+                roughness: 0.4
+            });
+            
+            const cab = new THREE.Mesh(cabGeometry, material);
+            cab.position.z = -1;
+            cab.castShadow = true;
+            carGroup.add(cab);
+            
+            const bed = new THREE.Mesh(bedGeometry, material);
+            bed.position.z = 1.2;
+            bed.castShadow = true;
+            carGroup.add(bed);
+            
+        } else {
+            // Sedan - standard shape
+            const bodyGeometry = new THREE.BoxGeometry(1.9, 0.6, 4);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: color,
+                metalness: 0.6,
+                roughness: 0.2
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            carGroup.add(body);
+        }
+        
+        // Add wheels to all models
+        const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.25, 16);
+        const wheelMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x222222,
+            metalness: 0.9,
+            roughness: 0.1
+        });
+        
+        const wheelPositions = [
+            { x: -0.9, z: -1.5 }, // Front left
+            { x: 0.9, z: -1.5 },  // Front right
+            { x: -0.9, z: 1.5 },  // Rear left
+            { x: 0.9, z: 1.5 }    // Rear right
+        ];
+        
+        wheelPositions.forEach(pos => {
+            const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(pos.x, -0.3, pos.z);
+            wheel.castShadow = true;
+            carGroup.add(wheel);
+        });
+        
+        // Add windows
+        const windowGeometry = new THREE.BoxGeometry(1.6, 0.3, 1.5);
+        const windowMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x222222,
+            metalness: 0.9,
+            roughness: 0.1,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+        windowMesh.position.y = 0.3;
+        windowMesh.position.z = -0.5;
+        carGroup.add(windowMesh);
+        
+        carGroup.position.y = 0.5;
+        this.scene.add(carGroup);
+        this.carModel = carGroup;
+    }
+    
+    changeColor(colorHex) {
+        if (this.carModel) {
+            this.carModel.traverse((child) => {
+                if (child.isMesh && child.material.color) {
+                    // Don't change wheel or window colors
+                    if (child.material.color.getHex() !== 0x222222 && 
+                        child.material.color.getHex() !== 0x333333) {
+                        child.material.color.set(colorHex);
+                    }
+                }
+            });
+        }
+        this.currentColor = colorHex;
+    }
+    
+    changeView(viewType) {
+        switch(viewType) {
+            case 'exterior':
+                this.camera.position.set(5, 3, 5);
+                this.controls.target.set(0, 0.5, 0);
+                break;
+            case 'interior':
+                this.camera.position.set(0, 1, 2);
+                this.controls.target.set(0, 0.8, 0);
+                break;
+            case 'top':
+                this.camera.position.set(0, 8, 0);
+                this.controls.target.set(0, 0.5, 0);
+                break;
+            case 'reset':
+                this.camera.position.set(5, 3, 5);
+                this.controls.target.set(0, 0.5, 0);
+                this.controls.reset();
+                break;
+        }
+    }
+    
+    updateCarInfo(modelType) {
+        const info = this.carInfo[modelType];
+        document.getElementById('car3dTitle').textContent = info.title;
+        document.getElementById('car3dDescription').textContent = info.description;
+        
+        // Update specs
+        const specItems = document.querySelectorAll('.spec-item strong');
+        specItems[0].textContent = info.specs.speed;
+        specItems[1].textContent = info.specs.engine;
+        specItems[2].textContent = info.specs.transmission;
+    }
+    
+    setupEventListeners() {
+        // Car model selection
+        document.querySelectorAll('.car-option').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.car-option').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const modelType = button.getAttribute('data-model');
+                this.currentModel = modelType;
+                this.loadModel(modelType);
+            });
+        });
+        
+        // Color selection
+        document.querySelectorAll('.color-option').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.color-option').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const colorHex = button.getAttribute('data-color');
+                this.changeColor(colorHex);
+            });
+        });
+        
+        // View controls
+        document.querySelectorAll('.view-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const viewType = button.getAttribute('data-view');
+                this.changeView(viewType);
+            });
+        });
+    }
+    
+    onWindowResize() {
+        const container = document.getElementById('car3dViewer');
+        this.camera.aspect = container.clientWidth / container.clientHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+    
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        
+        // Rotate car slowly
+        if (this.carModel) {
+            this.carModel.rotation.y += 0.002;
+        }
+        
+        // Update controls
+        this.controls.update();
+        
+        // Render
+        this.renderer.render(this.scene, this.camera);
+    }
+}
+
+// Initialize 3D viewer when page loads
+window.addEventListener('DOMContentLoaded', () => {
+    // Check if WebGL is supported
+    if (typeof WebGLRenderingContext !== 'undefined') {
+        const viewer = new Car3DViewer();
+        
+        // Add instructions
+        const instructions = document.createElement('div');
+        instructions.className = 'viewer-instructions';
+        instructions.innerHTML = 'Drag to rotate • Scroll to zoom • Click buttons to customize';
+        document.getElementById('car3dViewer').appendChild(instructions);
+        
+        // Store viewer globally for debugging
+        window.carViewer = viewer;
+    } else {
+        document.getElementById('car3dViewer').innerHTML = 
+            '<div style="padding: 40px; text-align: center; color: #721c24; background-color: #f8d7da; border-radius: 10px;">' +
+            '<h3>WebGL Not Supported</h3>' +
+            '<p>Your browser does not support WebGL, which is required for the 3D viewer.</p>' +
+            '<p>Please try using a modern browser like Chrome, Firefox, or Edge.</p>' +
+            '</div>';
+    }
+});
+    </script>
+</body>
+</html>
